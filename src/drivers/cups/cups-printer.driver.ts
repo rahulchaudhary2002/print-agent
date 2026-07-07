@@ -17,7 +17,13 @@ const COMMAND_TIMEOUT_MS = 10_000;
 /** Prints via the CUPS command-line tools (`lp`/`lpstat`) — Linux/macOS only. */
 export class CupsPrinterDriver extends BasePrinterDriver {
   readonly driverName = 'cups';
-  readonly capabilities = [PrinterCapability.Network, PrinterCapability.Pdf, PrinterCapability.Images, PrinterCapability.RawBytes];
+  readonly capabilities = [
+    PrinterCapability.Network,
+    PrinterCapability.EscPos,
+    PrinterCapability.Pdf,
+    PrinterCapability.Images,
+    PrinterCapability.RawBytes,
+  ];
 
   private printerName = '';
 
