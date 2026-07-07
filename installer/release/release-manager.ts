@@ -135,6 +135,12 @@ export class ReleaseManager {
         if (appImagePath) artifacts.push({ path: appImagePath, platform: 'linux' });
       }
 
+      if (hostPlatform !== 'windows') {
+        loggers.installer.warn(
+          'Building on a non-Windows host: UniversalPrintAgentSetup.exe will contain the NSIS install flow (registry entries, service scripts) but NOT a real app payload — a genuine Windows runtime needs the Windows Node.js binary plus win32-x64 native addon prebuilds (better-sqlite3, usb), neither of which exist on this host. Run `npm run release` on a Windows machine or a windows-latest CI runner to produce a fully populated installer.',
+        );
+      }
+
       const windowsInstallerPath = await buildWindowsInstaller({
         runtimeDir: hostPlatform === 'windows' ? runtimePackage.dir : join(layout.root, '_staging', 'runtime-windows-stub'),
         version: version.version,

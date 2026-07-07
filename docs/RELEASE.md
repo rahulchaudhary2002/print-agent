@@ -163,3 +163,13 @@ stages every source/config file needed and logs the exact command to finish the 
 that has the tool (e.g. `rpmbuild --define ... -bb <spec>`, `appimagetool <AppDir>`,
 `makensis <script.nsi>`). On a host with all four tools installed, the same pipeline produces
 every required artifact with no code changes.
+
+**Cross-platform Windows caveat:** even with `makensis` installed, running `npm run release` on
+Linux/macOS produces a `UniversalPrintAgentSetup.exe` that contains only the NSIS install flow
+(directory setup, registry entries, the generated Scheduled-Task service scripts) — not a real
+app payload. A genuine Windows runtime needs the actual Windows Node.js binary and win32-x64
+native-addon prebuilds (`better-sqlite3`, `usb`), neither of which can be assembled on a
+non-Windows host. `release-manager.ts` logs an explicit warning when this happens rather than
+silently shipping an incomplete installer. To produce a fully populated `.exe`, run
+`npm run release` on a Windows machine or a `windows-latest` GitHub Actions runner — no code
+changes required, since `hostPlatform` is detected automatically from `process.platform`.
