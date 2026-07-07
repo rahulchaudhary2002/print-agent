@@ -1,0 +1,50 @@
+{
+  "name": "print-agent",
+  "version": "1.0.0",
+  "description": "Cross-platform print agent",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "print-agent-ctl": "./bin/print-agent-ctl"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "typecheck:installer": "tsc -p installer/tsconfig.json --noEmit",
+    "service:generate": "node dist/cli/generate-service-files.js",
+    "migrate": "node dist/cli/migrate.js",
+    "installer:install": "tsx installer/scripts/install.ts",
+    "installer:uninstall": "tsx installer/scripts/uninstall.ts",
+    "installer:package": "tsx installer/scripts/package.ts",
+    "ctl": "tsx installer/scripts/cli.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/rate-limit": "^11.1.0",
+    "@fastify/swagger": "^9.7.0",
+    "@fastify/swagger-ui": "^6.0.0",
+    "@types/node": "^26.1.0",
+    "better-sqlite3": "^12.11.1",
+    "fastify": "^5.10.0",
+    "jpeg-js": "^0.4.4",
+    "pdf-to-printer": "^5.8.0",
+    "pino": "^10.3.1",
+    "pngjs": "^7.0.0",
+    "usb": "^2.18.0",
+    "uuid": "^14.0.1",
+    "ws": "^8.21.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/pngjs": "^6.0.5",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Runtime data (config, database, PID/crash files) — never commit user data
+storage/*
+!storage/.gitkeep
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# Scratch/temp space
+temp/
+
+# Packaging output
+release/
+deploy/
+
+# Editor / OS
+.DS_Store
+*.log
+
+# Claude Code local session state
+.claude/

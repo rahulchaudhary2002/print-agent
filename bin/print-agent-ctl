@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { spawn } from 'node:child_process';
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+const tsxBin = join(repoRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
+const cliScript = join(repoRoot, 'installer', 'scripts', 'cli.ts');
+
+const child = spawn(tsxBin, [cliScript, ...process.argv.slice(2)], { stdio: 'inherit' });
+child.on('exit', (code) => process.exit(code ?? 1));

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Print Agent
+Comment=Universal Print Agent — local printer management
+Exec=xdg-open http://127.0.0.1:{{PORT}}/docs
+Icon=utilities-terminal
+Categories=Utility;
+Terminal=false

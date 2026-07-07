@@ -1,0 +1,7 @@
+{
+  "version": "{{VERSION}}",
+  "builtAt": "{{BUILT_AT}}",
+  "platform": "{{PLATFORM}}",
+  "arch": "{{ARCH}}",
+  "artifacts": []
+}
