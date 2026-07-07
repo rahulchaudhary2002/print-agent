@@ -2,6 +2,7 @@ import { cpSync, chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from 
 import { join } from 'node:path';
 import { commandExists, run } from '../common/exec-utils.js';
 import type { InstallerLogger } from '../common/installer-logger.js';
+import { generatePlaceholderIconSvg } from './icon.js';
 
 function appRunScript(): string {
   return `#!/bin/sh
@@ -13,12 +14,12 @@ exec "$HERE/usr/bin/node" "$HERE/dist/index.js" "$@"
 function desktopEntry(): string {
   return `[Desktop Entry]
 Type=Application
-Name=Print Agent
-Comment=Universal Print Agent background service
+Name=Universal Print Agent
+Comment=Local printer discovery, queueing, and printing service
 Exec=AppRun
 Icon=print-agent
 Categories=Utility;
-Terminal=true
+Terminal=false
 `;
 }
 
@@ -35,8 +36,10 @@ export async function buildAppImage(options: {
   version: string;
   outputDir: string;
   logger: InstallerLogger;
+  /** Step 4 — extra files (LICENSE, README, version.json, ...) copied into the AppDir root. */
+  extraFiles?: Array<{ source: string; destRelative: string }> | undefined;
 }): Promise<string | null> {
-  const { projectRoot, version, outputDir, logger } = options;
+  const { projectRoot, outputDir, logger, extraFiles = [] } = options;
 
   const appDir = join(projectRoot, 'temp', 'AppDir');
   rmSync(appDir, { recursive: true, force: true });
@@ -48,6 +51,12 @@ export async function buildAppImage(options: {
       cpSync(source, join(appDir, entry), { recursive: true });
     }
   }
+  for (const extra of extraFiles) {
+    if (existsSync(extra.source)) {
+      mkdirSync(join(appDir, extra.destRelative, '..'), { recursive: true });
+      cpSync(extra.source, join(appDir, extra.destRelative), { recursive: true });
+    }
+  }
   // The AppImage needs its own copy of the Node runtime — copying the host's `node` binary is
   // the pragmatic default; swap for a specific downloaded Node build if targeting a different
   // machine than the one running this builder.
@@ -55,7 +64,8 @@ export async function buildAppImage(options: {
 
   writeFileSync(join(appDir, 'AppRun'), appRunScript(), 'utf-8');
   chmodSync(join(appDir, 'AppRun'), 0o755);
-  writeFileSync(join(appDir, 'print-agent.desktop'), desktopEntry(), 'utf-8');
+  writeFileSync(join(appDir, 'universal-print-agent.desktop'), desktopEntry(), 'utf-8');
+  writeFileSync(join(appDir, 'print-agent.svg'), generatePlaceholderIconSvg(), 'utf-8');
 
   logger.info('Staged AppDir', { appDir });
 
@@ -65,7 +75,7 @@ export async function buildAppImage(options: {
   }
 
   mkdirSync(outputDir, { recursive: true });
-  const outputPath = join(outputDir, `PrintAgent-${version}-${process.arch}.AppImage`);
+  const outputPath = join(outputDir, 'UniversalPrintAgent.AppImage');
   const result = await run('appimagetool', [appDir, outputPath]);
   if (result.code !== 0) {
     logger.error('appimagetool failed', { stderr: result.stderr });

@@ -18,7 +18,8 @@
     "installer:install": "tsx installer/scripts/install.ts",
     "installer:uninstall": "tsx installer/scripts/uninstall.ts",
     "installer:package": "tsx installer/scripts/package.ts",
-    "ctl": "tsx installer/scripts/cli.ts"
+    "ctl": "tsx installer/scripts/cli.ts",
+    "release": "tsx installer/scripts/release.ts"
   },
   "keywords": [],
   "author": "",
@@ -44,6 +45,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/pngjs": "^6.0.5",
     "@types/ws": "^8.18.1",
+    "esbuild": "^0.28.1",
     "tsx": "^4.23.0",
     "typescript": "^6.0.3"
   }

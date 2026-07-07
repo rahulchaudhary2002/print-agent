@@ -3,11 +3,25 @@ import { join } from 'node:path';
 import { generateSystemdUnit } from '../../src/service/installer/index.js';
 import { commandExists, run } from '../common/exec-utils.js';
 import type { InstallerLogger } from '../common/installer-logger.js';
+import { generatePlaceholderIconSvg } from './icon.js';
 
 const INSTALL_PREFIX = '/opt/print-agent';
 
+function desktopEntry(): string {
+  return `[Desktop Entry]
+Type=Application
+Name=Universal Print Agent
+Comment=Local printer discovery, queueing, and printing service
+Exec=/usr/bin/env node ${INSTALL_PREFIX}/dist/index.js
+Icon=print-agent
+Categories=Utility;
+Terminal=false
+NoDisplay=true
+`;
+}
+
 function controlFile(version: string, architecture: string): string {
-  return `Package: print-agent
+  return `Package: universal-print-agent
 Version: ${version}
 Section: utils
 Priority: optional
@@ -63,8 +77,10 @@ export async function buildDebPackage(options: {
   version: string;
   outputDir: string;
   logger: InstallerLogger;
+  /** Step 4 — extra files (LICENSE, README, version.json, ...) copied into `/opt/print-agent/<destRelative>`. */
+  extraFiles?: Array<{ source: string; destRelative: string }> | undefined;
 }): Promise<string | null> {
-  const { projectRoot, version, outputDir, logger } = options;
+  const { projectRoot, version, outputDir, logger, extraFiles = [] } = options;
 
   if (!(await commandExists('dpkg-deb'))) {
     logger.warn('dpkg-deb not found — skipping .deb build. Install dpkg-dev to enable this.');
@@ -78,9 +94,13 @@ export async function buildDebPackage(options: {
   const debianDir = join(stagingDir, 'DEBIAN');
   const appDir = join(stagingDir, 'opt', 'print-agent');
   const systemdDir = join(stagingDir, 'etc', 'systemd', 'system');
+  const applicationsDir = join(stagingDir, 'usr', 'share', 'applications');
+  const pixmapsDir = join(stagingDir, 'usr', 'share', 'pixmaps');
   mkdirSync(debianDir, { recursive: true });
   mkdirSync(appDir, { recursive: true });
   mkdirSync(systemdDir, { recursive: true });
+  mkdirSync(applicationsDir, { recursive: true });
+  mkdirSync(pixmapsDir, { recursive: true });
 
   for (const entry of ['dist', 'package.json', 'node_modules']) {
     const source = join(projectRoot, entry);
@@ -88,6 +108,17 @@ export async function buildDebPackage(options: {
       cpSync(source, join(appDir, entry), { recursive: true });
     }
   }
+  for (const extra of extraFiles) {
+    if (existsSync(extra.source)) {
+      mkdirSync(join(appDir, extra.destRelative, '..'), { recursive: true });
+      cpSync(extra.source, join(appDir, extra.destRelative), { recursive: true });
+    }
+  }
+
+  // Step 6 — desktop file + icon, so the app shows up (as a background-service indicator, not a
+  // launchable GUI — `NoDisplay=true`) in desktop environments that scan .desktop entries.
+  writeFileSync(join(applicationsDir, 'universal-print-agent.desktop'), desktopEntry(), 'utf-8');
+  writeFileSync(join(pixmapsDir, 'print-agent.svg'), generatePlaceholderIconSvg(), 'utf-8');
 
   writeFileSync(join(debianDir, 'control'), controlFile(version, architecture), 'utf-8');
   writeFileSync(join(debianDir, 'postinst'), postinstScript(), 'utf-8');
@@ -113,7 +144,7 @@ export async function buildDebPackage(options: {
   );
 
   mkdirSync(outputDir, { recursive: true });
-  const outputPath = join(outputDir, `print-agent_${version}_${architecture}.deb`);
+  const outputPath = join(outputDir, `universal-print-agent_${version}_${architecture}.deb`);
 
   const hasFakeroot = await commandExists('fakeroot');
   const result = hasFakeroot

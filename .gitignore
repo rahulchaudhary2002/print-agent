@@ -16,8 +16,8 @@ logs/*
 # Scratch/temp space
 temp/
 
-# Packaging output
-release/
+# Packaging output (top-level only — installer/release/ is source code, not output)
+/release/
 deploy/
 
 # Editor / OS

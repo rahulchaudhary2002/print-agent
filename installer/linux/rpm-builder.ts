@@ -3,11 +3,25 @@ import { join } from 'node:path';
 import { generateSystemdUnit } from '../../src/service/installer/index.js';
 import { commandExists, run } from '../common/exec-utils.js';
 import type { InstallerLogger } from '../common/installer-logger.js';
+import { generatePlaceholderIconSvg } from './icon.js';
 
 const INSTALL_PREFIX = '/opt/print-agent';
 
+function desktopEntry(): string {
+  return `[Desktop Entry]
+Type=Application
+Name=Universal Print Agent
+Comment=Local printer discovery, queueing, and printing service
+Exec=/usr/bin/env node ${INSTALL_PREFIX}/dist/index.js
+Icon=print-agent
+Categories=Utility;
+Terminal=false
+NoDisplay=true
+`;
+}
+
 function specFile(version: string): string {
-  return `Name: print-agent
+  return `Name: universal-print-agent
 Version: ${version}
 Release: 1%{?dist}
 Summary: Universal Print Agent
@@ -23,10 +37,15 @@ mkdir -p %{buildroot}${INSTALL_PREFIX}
 cp -r %{_sourcedir}/app/* %{buildroot}${INSTALL_PREFIX}/
 mkdir -p %{buildroot}/etc/systemd/system
 cp %{_sourcedir}/print-agent.service %{buildroot}/etc/systemd/system/print-agent.service
+mkdir -p %{buildroot}/usr/share/applications %{buildroot}/usr/share/pixmaps
+cp %{_sourcedir}/universal-print-agent.desktop %{buildroot}/usr/share/applications/universal-print-agent.desktop
+cp %{_sourcedir}/print-agent.svg %{buildroot}/usr/share/pixmaps/print-agent.svg
 
 %files
 ${INSTALL_PREFIX}
 /etc/systemd/system/print-agent.service
+/usr/share/applications/universal-print-agent.desktop
+/usr/share/pixmaps/print-agent.svg
 
 %pre
 getent passwd printagent >/dev/null || useradd --system --no-create-home --shell /usr/sbin/nologin printagent
@@ -59,8 +78,10 @@ export async function buildRpmPackage(options: {
   version: string;
   outputDir: string;
   logger: InstallerLogger;
+  /** Step 4 — extra files (LICENSE, README, version.json, ...) copied into `/opt/print-agent/<destRelative>`. */
+  extraFiles?: Array<{ source: string; destRelative: string }> | undefined;
 }): Promise<string | null> {
-  const { projectRoot, version, outputDir, logger } = options;
+  const { projectRoot, version, outputDir, logger, extraFiles = [] } = options;
 
   const rpmbuildRoot = join(projectRoot, 'temp', 'rpmbuild');
   const sourcesDir = join(rpmbuildRoot, 'SOURCES');
@@ -78,6 +99,12 @@ export async function buildRpmPackage(options: {
       cpSync(source, join(appStagingDir, entry), { recursive: true });
     }
   }
+  for (const extra of extraFiles) {
+    if (existsSync(extra.source)) {
+      mkdirSync(join(appStagingDir, extra.destRelative, '..'), { recursive: true });
+      cpSync(extra.source, join(appStagingDir, extra.destRelative), { recursive: true });
+    }
+  }
 
   writeFileSync(
     join(sourcesDir, 'print-agent.service'),
@@ -90,6 +117,8 @@ export async function buildRpmPackage(options: {
     }),
     'utf-8',
   );
+  writeFileSync(join(sourcesDir, 'universal-print-agent.desktop'), desktopEntry(), 'utf-8');
+  writeFileSync(join(sourcesDir, 'print-agent.svg'), generatePlaceholderIconSvg(), 'utf-8');
 
   const specPath = join(specsDir, 'print-agent.spec');
   writeFileSync(specPath, specFile(version), 'utf-8');
